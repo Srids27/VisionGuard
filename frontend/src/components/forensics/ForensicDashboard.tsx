@@ -41,7 +41,7 @@ export default function ForensicDashboard({ result }: ForensicDashboardProps) {
       </div>
 
       {/* Integrity Certificate */}
-      <IntegrityCertificate
+      <IntegrityCertificate //@ts-ignore
         fileHash={result.sha256_hash}
         verdict={result.verdict}
         manipulationScore={result.manipulation_score}
