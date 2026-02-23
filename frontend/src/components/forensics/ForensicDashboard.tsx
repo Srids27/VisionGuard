@@ -41,13 +41,14 @@ export default function ForensicDashboard({ result }: ForensicDashboardProps) {
       </div>
 
       {/* Integrity Certificate */}
-      <IntegrityCertificate //@ts-ignore
+      <IntegrityCertificate 
         fileHash={result.sha256_hash}
         verdict={result.verdict}
         manipulationScore={result.manipulation_score}
         timestamp={result.timestamp}
         imageName={result.image_name}
         hasExif={result.metadata.has_exif}
+        metadataStatus={result.metadata.has_exif ? 'verified' : 'warning'}
       />
     </div>
   );
