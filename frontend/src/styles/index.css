@@ -1,0 +1,41 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
+@import "tailwindcss";
+@import "./crt-effects.css";
+@import "./glow-animations.css";
+
+@theme {
+  --color-cyber-black: #0a0a0a;
+  --color-cyber-charcoal: #1a1a1a;
+  --color-cyber-green: #00ff41;
+  --color-cyber-cyan: #00f0ff;
+  --color-cyber-red: #ff0041;
+  --color-cyber-yellow: #ffea00;
+  --color-cyber-gray: #2a2a2a;
+  --color-cyber-dim: #0d3b0d;
+  --font-mono: 'JetBrains Mono', 'Courier New', monospace;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background-color: var(--color-cyber-black);
+  color: var(--color-cyber-green);
+  font-family: var(--font-mono);
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-cyber-charcoal);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-cyber-green);
+  border-radius: 3px;
+}
