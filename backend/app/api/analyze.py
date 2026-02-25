@@ -111,17 +111,18 @@ async def analyze_image(
     metadata = extract_metadata(file_bytes)
     ela_result = perform_ela(file_bytes)
 
-detector = get_detector()
+    detector = get_detector()
 
-if detector is not None:
-    ai_result = detector.predict(file_bytes, ela_stats=ela_result)
-else:
-    logger.warning("AI detector unavailable, returning default result")
-    ai_result = {
-        "deepfake_probability": 0.0,
-        "confidence": 0.0,
-        "model_available": False
-    }
+    if detector is not None:
+        ai_result = detector.predict(file_bytes, ela_stats=ela_result)
+    else:
+        logger.warning("AI detector unavailable, returning default result")
+        ai_result = {
+            "deepfake_probability": 0.0,
+            "confidence": 0.0,
+            "model_available": False
+        }
+    
     # Compute final scores
     metadata_risk = _compute_metadata_risk(metadata)
     ela_normalized = min((ela_result.get("mean_diff", 0) / 30.0) * 100, 100)
