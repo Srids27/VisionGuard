@@ -94,6 +94,7 @@ async def analyze_image(
 
     # Read file
     file_bytes = await file.read()
+
     if len(file_bytes) > settings.max_file_size:
         raise HTTPException(
             status_code=400,
@@ -102,6 +103,30 @@ async def analyze_image(
 
     if len(file_bytes) == 0:
         raise HTTPException(status_code=400, detail="Empty file.")
+
+    # Reduce memory usage: resize + compress image
+    from PIL import Image
+    import io
+
+    try:
+        image = Image.open(io.BytesIO(file_bytes))
+
+        # Resize to max 512px (huge memory saving)
+        image.thumbnail((512, 512))
+
+        # Convert to RGB to avoid mode issues
+        if image.mode != "RGB":
+            image = image.convert("RGB")
+
+        # Save compressed JPEG to memory
+        buffer = io.BytesIO()
+        image.save(buffer, format="JPEG", quality=85)
+
+        # Replace original bytes with smaller version
+        file_bytes = buffer.getvalue()
+
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Invalid image file: {e}")
 
     # Compute hash and save
     sha256 = compute_hash(file_bytes)
@@ -170,5 +195,4 @@ async def analyze_image(
         metadata=MetadataResult(**metadata),
         ela=ELAResult(**ela_result),
         ai_detection=AIDetectionResult(**ai_result),
-       
     )

@@ -1,58 +1,50 @@
 import base64
 import logging
 from io import BytesIO
-
-import cv2
-import numpy as np
-from PIL import Image
+from PIL import Image, ImageChops, ImageEnhance
 
 logger = logging.getLogger(__name__)
 
-JPEG_QUALITY = 95
+JPEG_QUALITY = 70   # lower quality = lighter memory
 SCALE_FACTOR = 15
 
 
 def perform_ela(file_bytes: bytes) -> dict:
-    """Perform Error Level Analysis on an image.
+    """Low-memory Error Level Analysis using PIL only."""
 
-    1. Load original as RGB
-    2. Resave at JPEG quality 95
-    3. Compute absolute pixel difference
-    4. Enhance and create heatmap
-    """
     try:
+        # Open and ensure small size
         original = Image.open(BytesIO(file_bytes)).convert("RGB")
+        original.thumbnail((512, 512))   # 🔥 very important
     except Exception as e:
         logger.error("Failed to open image for ELA: %s", e)
         return {"heatmap_base64": "", "mean_diff": 0.0, "max_diff": 0.0}
 
-    # Resave at known compression level
+    # Re-save compressed version
     buffer = BytesIO()
-    original.save(buffer, format="JPEG", quality=JPEG_QUALITY)
+    original.save(buffer, "JPEG", quality=JPEG_QUALITY)
     buffer.seek(0)
     resaved = Image.open(buffer).convert("RGB")
 
-    # Compute pixel-level difference
-    orig_array = np.array(original, dtype=np.int16)
-    resaved_array = np.array(resaved, dtype=np.int16)
-    diff = np.abs(orig_array - resaved_array)
+    # Compute difference (PIL version — no numpy)
+    diff = ImageChops.difference(original, resaved)
 
-    # Enhance the difference
-    enhanced = np.clip(diff * SCALE_FACTOR, 0, 255).astype(np.uint8)
+    # Enhance difference
+    enhancer = ImageEnhance.Brightness(diff)
+    diff_enhanced = enhancer.enhance(SCALE_FACTOR)
 
-    # Convert to grayscale for heatmap
-    gray = np.mean(enhanced, axis=2).astype(np.uint8)
+    # Convert to grayscale heatmap
+    heatmap = diff_enhanced.convert("L")
 
-    # Apply colormap
-    heatmap = cv2.applyColorMap(gray, cv2.COLORMAP_JET)
+    # Compute simple statistics
+    extrema = diff.getextrema()  # [(min,max), (min,max), (min,max)]
+    max_diff = max([e[1] for e in extrema])
+    mean_diff = sum([e[1] for e in extrema]) / len(extrema)
 
-    # Compute statistics
-    mean_diff = float(np.mean(diff))
-    max_diff = float(np.percentile(diff, 99))
-
-    # Encode heatmap as base64 PNG
-    _, png_buffer = cv2.imencode(".png", heatmap)
-    heatmap_b64 = base64.b64encode(png_buffer.tobytes()).decode("utf-8")
+    # Encode to base64 PNG
+    buffer2 = BytesIO()
+    heatmap.save(buffer2, format="PNG")
+    heatmap_b64 = base64.b64encode(buffer2.getvalue()).decode()
 
     return {
         "heatmap_base64": f"data:image/png;base64,{heatmap_b64}",
