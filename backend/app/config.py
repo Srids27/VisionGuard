@@ -5,7 +5,7 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     database_url: str = "sqlite:///./visionguard.db"
     upload_dir: Path = Path("./uploads")
-    max_file_size: int = 10 * 1024 * 1024  # 10MB
+    max_file_size: int = 3 * 1024 * 1024  # 3MB
     model_path: Path = Path("./models/Meso4_DF.pth")
     cors_origins: list[str] = ["*"]
 

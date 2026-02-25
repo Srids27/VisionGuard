@@ -6,7 +6,7 @@ interface FileUploadZoneProps {
   isAnalyzing: boolean;
 }
 
-const MAX_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_SIZE = 3 * 1024 * 1024; // 10MB
 
 export default function FileUploadZone({ onFileSelect, isAnalyzing }: FileUploadZoneProps) {
   const [error, setError] = useState<string | null>(null);
@@ -17,7 +17,7 @@ export default function FileUploadZone({ onFileSelect, isAnalyzing }: FileUpload
       if (rejected.length > 0) {
         const err = rejected[0]?.errors?.[0];
         if (err?.code === 'file-too-large') {
-          setError('File too large. Maximum size is 10MB.');
+          setError('File too large. Maximum size is 3MB.');
         } else if (err?.code === 'file-invalid-type') {
           setError('Invalid format. Only JPG and PNG accepted.');
         } else {
@@ -80,7 +80,7 @@ export default function FileUploadZone({ onFileSelect, isAnalyzing }: FileUpload
                 : '[ DRAG & DROP IMAGE HERE ]'}
             </p>
             <p className="text-xs text-gray-600 mt-2">
-              or click to browse -- JPG/PNG, max 10MB
+              or click to browse -- JPG/PNG, max 3MB
             </p>
           </div>
         </div>

@@ -140,7 +140,7 @@ async def analyze_image(
     verdict = _compute_verdict(manipulation_score, metadata, ai_result)
 
     # Encode original image as base64
-    original_b64 = f"data:{file.content_type};base64,{base64.b64encode(file_bytes).decode()}"
+    #original_b64 = f"data:{file.content_type};base64,{base64.b64encode(file_bytes).decode()}"
 
     # Persist to database
     now = datetime.now(timezone.utc)
@@ -170,5 +170,5 @@ async def analyze_image(
         metadata=MetadataResult(**metadata),
         ela=ELAResult(**ela_result),
         ai_detection=AIDetectionResult(**ai_result),
-        original_image_base64=original_b64,
+       
     )
