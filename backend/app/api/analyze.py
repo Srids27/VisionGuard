@@ -24,12 +24,17 @@ router = APIRouter()
 _detector: AIDetector | None = None
 
 
-def get_detector() -> AIDetector:
+def get_detector() -> AIDetector | None:
     global _detector
     if _detector is None:
-        _detector = AIDetector(model_path=settings.model_path)
+        try:
+            logger.info("Loading AI model...")
+            _detector = AIDetector(model_path=settings.model_path)
+            logger.info("AI model loaded successfully")
+        except Exception as e:
+            logger.error(f"Model loading failed: {e}")
+            _detector = None   # prevent crash
     return _detector
-
 
 ALLOWED_CONTENT_TYPES = {"image/jpeg", "image/png"}
 ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png"}
@@ -106,9 +111,17 @@ async def analyze_image(
     metadata = extract_metadata(file_bytes)
     ela_result = perform_ela(file_bytes)
 
-    detector = get_detector()
-    ai_result = detector.predict(file_bytes, ela_stats=ela_result)
+detector = get_detector()
 
+if detector is not None:
+    ai_result = detector.predict(file_bytes, ela_stats=ela_result)
+else:
+    logger.warning("AI detector unavailable, returning default result")
+    ai_result = {
+        "deepfake_probability": 0.0,
+        "confidence": 0.0,
+        "model_available": False
+    }
     # Compute final scores
     metadata_risk = _compute_metadata_risk(metadata)
     ela_normalized = min((ela_result.get("mean_diff", 0) / 30.0) * 100, 100)
