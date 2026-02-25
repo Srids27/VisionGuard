@@ -111,13 +111,7 @@ async def analyze_image(
     metadata = extract_metadata(file_bytes)
     ela_result = perform_ela(file_bytes)
 
-    detector = get_detector()
-
-    if detector is not None:
-        ai_result = detector.predict(file_bytes, ela_stats=ela_result)
-    else:
-        logger.warning("AI detector unavailable, returning default result")
-        ai_result = {
+    ai_result = {
             "deepfake_probability": 0.0,
             "confidence": 0.0,
             "model_available": False
