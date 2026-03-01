@@ -37,7 +37,8 @@ class AnalysisResponse(BaseModel):
     metadata: MetadataResult
     ela: ELAResult
     ai_detection: AIDetectionResult
-    original_image_base64: str
+    #original_image_base64: str
+    original_image_base64: str | None = None
 
 
 class ScanSummary(BaseModel):
