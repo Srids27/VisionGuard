@@ -137,10 +137,11 @@ async def analyze_image(
     ela_result = perform_ela(file_bytes)
 
     ai_result = {
-            "deepfake_probability": 0.0,
-            "confidence": 0.0,
-            "model_available": False
-        }
+     "deepfake_probability": 0.0,
+     "confidence": 0.0,
+     "model_used": "none",
+    }
+
     
     # Compute final scores
     metadata_risk = _compute_metadata_risk(metadata)
