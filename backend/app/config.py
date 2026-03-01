@@ -5,9 +5,9 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     database_url: str = "sqlite:///./visionguard.db"
     upload_dir: Path = Path("./uploads")
-    max_file_size: int = 3 * 1024 * 1024  # 3MB
+    max_file_size: int = 2 * 1024 * 1024  # 2MB
     model_path: Path = Path("./models/Meso4_DF.pth")
-    cors_origins: list[str] = ["*"]
+    cors_origins: list[str] = ["https://vision-guard-sp.vercel.app"]
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 
