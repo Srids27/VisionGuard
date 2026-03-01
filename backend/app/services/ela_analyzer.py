@@ -6,7 +6,7 @@ from PIL import Image, ImageChops, ImageEnhance
 logger = logging.getLogger(__name__)
 
 JPEG_QUALITY = 70   # lower quality = lighter memory
-SCALE_FACTOR = 15
+SCALE_FACTOR = 8
 
 
 def perform_ela(file_bytes: bytes) -> dict:
@@ -47,7 +47,8 @@ def perform_ela(file_bytes: bytes) -> dict:
     heatmap_b64 = base64.b64encode(buffer2.getvalue()).decode()
 
     return {
-        "heatmap_base64": f"data:image/png;base64,{heatmap_b64}",
+        #"heatmap_base64": f"data:image/png;base64,{heatmap_b64}",
+        "heatmap_base64": "",
         "mean_diff": round(mean_diff, 2),
         "max_diff": round(max_diff, 2),
     }
