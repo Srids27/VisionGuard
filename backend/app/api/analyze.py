@@ -61,7 +61,7 @@ def _compute_verdict(score: float, metadata: dict, ai_result: dict) -> str:
 def _compute_metadata_risk(metadata: dict) -> float:
     risk = 0.0
     if not metadata.get("has_exif"):
-        risk = 60.0
+        risk = 30.0
     if metadata.get("software"):
         from app.services.metadata_extractor import SUSPICIOUS_SOFTWARE
         sw = metadata["software"].lower()
@@ -92,60 +92,61 @@ async def analyze_image(
             detail=f"Invalid file extension '{ext}'. Only .jpg, .jpeg, .png are allowed.",
         )
 
-    # Read file
-    file_bytes = await file.read()
+    # Read ORIGINAL file
+    original_bytes = await file.read()
 
-    if len(file_bytes) > settings.max_file_size:
+    if len(original_bytes) > settings.max_file_size:
         raise HTTPException(
             status_code=400,
             detail=f"File too large. Maximum size is {settings.max_file_size // (1024*1024)}MB.",
         )
 
-    if len(file_bytes) == 0:
+    if len(original_bytes) == 0:
         raise HTTPException(status_code=400, detail="Empty file.")
 
-    # Reduce memory usage: resize + compress image
+
+    # 🔥 STEP 1 — METADATA from ORIGINAL
+    metadata = extract_metadata(original_bytes)
+
+    # 🔥 STEP 2 — ELA from ORIGINAL
+    ela_result = perform_ela(original_bytes)
+
+
+    # 🔥 STEP 3 — NOW resize/compress ONLY for storage
     from PIL import Image
     import io
 
     try:
-        image = Image.open(io.BytesIO(file_bytes))
+        image = Image.open(io.BytesIO(original_bytes))
 
-        # Resize to max 512px (huge memory saving)
         image.thumbnail((512, 512))
 
-        # Convert to RGB to avoid mode issues
         if image.mode != "RGB":
             image = image.convert("RGB")
 
-        # Save compressed JPEG to memory
         buffer = io.BytesIO()
         image.save(buffer, format="JPEG", quality=85)
 
-        # Replace original bytes with smaller version
-        file_bytes = buffer.getvalue()
+        processed_bytes = buffer.getvalue()
 
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Invalid image file: {e}")
 
-    # Compute hash and save
-    sha256 = compute_hash(file_bytes)
-    save_image(file_bytes, sha256, ext)
 
-    # Run analysis pipeline
-    metadata = extract_metadata(file_bytes)
-    ela_result = perform_ela(file_bytes)
+    # 🔥 STEP 4 — use processed for saving + hashing
+    sha256 = compute_hash(processed_bytes)
+    save_image(processed_bytes, sha256, ext)
 
     ai_result = {
      "deepfake_probability": 0.0,
      "confidence": 0.0,
-     "model_used": "none",
+      "model_used": "none",
     }
 
     
     # Compute final scores
     metadata_risk = _compute_metadata_risk(metadata)
-    ela_normalized = min((ela_result.get("mean_diff", 0) / 30.0) * 100, 100)
+    ela_normalized = min((ela_result.get("mean_diff", 0) / 60.0) * 100, 100)
     ai_pct = ai_result["deepfake_probability"] * 100
 
     manipulation_score = (
@@ -167,13 +168,15 @@ async def analyze_image(
 
     # Encode original image as base64
     #original_b64 = f"data:{file.content_type};base64,{base64.b64encode(file_bytes).decode()}"
+    original_b64 = f"data:{file.content_type};base64,{base64.b64encode(original_bytes).decode()}"
 
     # Persist to database
     now = datetime.now(timezone.utc)
     scan = Scan(
         image_name=file.filename or "unknown",
         sha256_hash=sha256,
-        file_size=len(file_bytes),
+        #file_size=len(file_bytes),
+        file_size=len(processed_bytes),
         timestamp=now,
         verdict=verdict,
         manipulation_score=manipulation_score,
@@ -196,4 +199,5 @@ async def analyze_image(
         metadata=MetadataResult(**metadata),
         ela=ELAResult(**ela_result),
         ai_detection=AIDetectionResult(**ai_result),
+        original_image_base64=original_b64   # 👈 ADD THIS
     )
